@@ -5,22 +5,23 @@ services:
   app:
     build: .
     environment:
-      AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7FAKE"
-      AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYFAKEKEY"
-      AWS_DEFAULT_REGION: "us-east-1"
-      AWS_ENDPOINT: http://awslocal:4566
+      AWS_ENDPOINT_URL: http://awslocal:4566
     ports:
       - "8080:8080"
     depends_on:
       - localstack
 
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:0.11.2
     container_name: awslocal
     hostname: awslocal
     environment:
       SERVICES: "sqs,sns"
+      HOST_TMP_FOLDER: /tmp/localstack
+      HOSTNAME_EXTERNAL: awslocal
     ports:
       - "4566:4566"
       - "8055:8080"
+    volumes:
+      - "./.localstack:/tmp/localstack"
 

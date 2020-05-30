@@ -1,0 +1,10 @@
+cloud:
+  aws:
+    region:
+      static: us-east-1
+      auto: false
+    endpoint:
+      uri: ${AWS_ENDPOINT_URL:-http://localhost:4566}
+    stack:
+      # Not using this causes the instance-id error
+      auto: false
