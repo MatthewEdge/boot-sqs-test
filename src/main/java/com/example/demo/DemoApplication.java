@@ -15,9 +15,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +46,7 @@ public class DemoApplication {
   public void receiveMessage(@NotificationMessage String message, @Payload String payload) {
     log.info(payload);
     log.info(message);
+    throw new RuntimeException("Fuck your message");
   }
 
   // Config required?
@@ -58,7 +57,7 @@ public class DemoApplication {
   private String region;
 
   private AWSCredentialsProvider credentialsProvider() {
-      return new AWSStaticCredentialsProvider(new AnonymousAWSCredentials());
+      return new AWSStaticCredentialsProvider(new BasicAWSCredentials("foo", "bar"));
   }
 
   private EndpointConfiguration endpointConfiguration() {
@@ -75,32 +74,33 @@ public class DemoApplication {
         .build();
   }
 
-  // public AmazonSNS amazonSNS(AWSCredentialsProvider credentialsProvider, EndpointConfiguration endpointConfiguration) {
-    // return AmazonSNSClientBuilder.standard()
-        // .withEndpointConfiguration(endpointConfiguration)
-        // .withCredentials(credentialsProvider)
-        // .build();
-  // }
+  @Bean
+  public AmazonSNS amazonSNS() {
+    return AmazonSNSClientBuilder.standard()
+        .withCredentials(credentialsProvider())
+        .withEndpointConfiguration(endpointConfiguration())
+        .build();
+  }
 
 
-  // @Autowired AmazonSQS sqs;
-  // @Autowired AmazonSNS sns;
+  @Autowired AmazonSQS sqs;
+  @Autowired AmazonSNS sns;
 
-  // @PostConstruct
-  // public void init() {
-    // var queue = sqs.createQueue("test");
-    // var topic = sns.createTopic("test");
 
-    // var queueArn = sqs.getQueueAttributes(queue.getQueueUrl(), Arrays.asList("QueueArn")).getAttributes().get("QueueArn");
-    // var existing = sns.listSubscriptions("").getSubscriptions().stream()
-        // .anyMatch(sub -> sub.getEndpoint().contentEquals(queueArn));
+  // Create required Queue, Topic, and create subscription between them, if they don't exist
+  @PostConstruct
+  public void init() {
+    var queue = sqs.createQueue("test");
+    var topic = sns.createTopic("test");
 
-    // if(!existing) {
-      // sns.subscribe(topic.getTopicArn(), "sqs", queueArn);
-    // }
+    var queueArn = sqs.getQueueAttributes(queue.getQueueUrl(), Arrays.asList("QueueArn")).getAttributes().get("QueueArn");
+    var existing = sns.listSubscriptions("").getSubscriptions().stream()
+        .anyMatch(sub -> sub.getEndpoint().contentEquals(queueArn));
 
-    // // Finally - test message
-    // sns.publish(topic.getTopicArn(), "Hello");
-  // }
+    if(!existing) {
+      sns.subscribe(topic.getTopicArn(), "sqs", queueArn);
+    }
+
+  }
 
 }

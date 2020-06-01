@@ -12,7 +12,7 @@ services:
       - localstack
 
   localstack:
-    image: localstack/localstack:0.11.2
+    image: localstack/localstack
     container_name: awslocal
     hostname: awslocal
     environment:
@@ -24,4 +24,5 @@ services:
       - "8055:8080"
     volumes:
       - "./.localstack:/tmp/localstack"
+      - "./localstack/init.sh:/docker-entrypoint-initaws.d/init.sh"
 
